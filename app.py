@@ -1,4 +1,5 @@
 import os
+import time
 from flask import Flask, request, jsonify, send_from_directory
 
 app = Flask(__name__)
@@ -28,7 +29,17 @@ def upload_file():
 # 2. Download Route: Allows you to view/download the image
 @app.route('/download/<filename>')
 def download(filename):
+    path = os.path.join('/tmp', filename)
+
+    if not os.path.exists(path):
+        return jsonify({"error": "File expired"}), 404
+
+    if time.time() - os.stat(path).st_mtime > 600:
+        os.remove(path)
+        return jsonify({"error": "File expired"}), 404
+
     return send_from_directory('/tmp', filename)
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
